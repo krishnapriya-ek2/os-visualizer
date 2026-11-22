@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OS Scheduling Visualizer | MCA Assignment</title>
+  <meta name="description" content="A comprehensive OS Scheduling Visualizer for Disk and CPU scheduling algorithms with interactive step-by-step playback, Chart.js graphs, Gantt charts, and comparative benchmarks.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-microchip"></i>
+        </div>
+        <div class="brand-text">
+          <h1>OS Scheduling <span class="gradient-text">Visualizer</span></h1>
+          <p class="brand-subtitle">MCA Academic Simulation & Benchmark Suite</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs" role="tablist">
+        <button class="nav-tab active" data-tab="disk-tab" role="tab" aria-selected="true">
+          <i class="fa-solid fa-compact-disc"></i>
+          <span>Disk Scheduling</span>
+        </button>
+        <button class="nav-tab" data-tab="cpu-tab" role="tab" aria-selected="false">
+          <i class="fa-solid fa-bolt-lightning"></i>
+          <span>CPU Scheduling</span>
+        </button>
+        <button class="nav-tab" data-tab="compare-tab" role="tab" aria-selected="false">
+          <i class="fa-solid fa-chart-column"></i>
+          <span>Benchmarking</span>
+        </button>
+        <button class="nav-tab" data-tab="docs-tab" role="tab" aria-selected="false">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Viva Guide</span>
+        </button>
+      </nav>
+
+      <!-- Global Actions -->
+      <div class="header-actions">
+        <button id="quick-preset-btn" class="btn btn-outline btn-sm" title="Quick textbook sample">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>Quick Demo</span>
+        </button>
+        <div class="status-indicator" title="Engine Status: Active">
+          <span class="status-dot"></span>
+          <span class="status-label">Engine Ready</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-content">
+    
+    <!-- ========================================== -->
+    <!-- 1. DISK SCHEDULING MODULE                  -->
+    <!-- ========================================== -->
+    <section id="disk-tab" class="tab-content active" role="tabpanel">
+      <!-- Section Header -->
+      <div class="section-title-bar">
+        <div>
+          <h2>Disk Scheduling Simulation</h2>
+          <p>Analyze and compare head movement across FCFS, SSTF, SCAN, C-SCAN, and LOOK algorithms.</p>
+        </div>
+        <div class="algorithm-badges">
+          <span class="badge badge-cyan">FCFS</span>
+          <span class="badge badge-purple">SSTF</span>
+          <span class="badge badge-emerald">SCAN</span>
+          <span class="badge badge-amber">C-SCAN</span>
+          <span class="badge badge-rose">LOOK</span>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <!-- Input Configuration Card -->
+        <div class="card config-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-sliders"></i> Parameters & Configuration</h3>
+            <div class="preset-dropdown-container">
+              <select id="disk-preset-select" class="form-select form-select-sm" title="Load Standard Preset">
+                <option value="">📂 Load Preset Queue...</option>
+                <option value="textbook-silberschatz">Silberschatz Textbook (98, 183, 37, 122... Head: 53)</option>
+                <option value="galvin-standard">Galvin Standard (82, 170, 43, 140... Head: 50)</option>
+                <option value="clustered">Clustered Request Distribution</option>
+                <option value="edge-extremes">Extreme Cylinders (0, 199 Boundaries)</option>
+                <option value="random">🎲 Random 8 Cylinders</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <form id="disk-form" class="config-form" onsubmit="return false;">
+              <div class="form-row">
+                <!-- Algorithm Selection -->
+                <div class="form-group flex-2">
+                  <label for="disk-algorithm"><i class="fa-solid fa-diagram-project"></i> Algorithm</label>
+                  <select id="disk-algorithm" class="form-select">
+                    <option value="FCFS">FCFS (First-Come First-Served)</option>
+                    <option value="SSTF">SSTF (Shortest Seek Time First)</option>
+                    <option value="SCAN" selected>SCAN (Elevator Algorithm)</option>
+                    <option value="C-SCAN">C-SCAN (Circular SCAN)</option>
+                    <option value="LOOK">LOOK (Optimized SCAN)</option>
+                  </select>
+                </div>
+
+                <!-- Direction -->
+                <div class="form-group flex-1">
+                  <label for="disk-direction"><i class="fa-solid fa-arrows-left-right"></i> Direction</label>
+                  <select id="disk-direction" class="form-select">
+                    <option value="right" selected>Right / High (Increasing)</option>
+                    <option value="left">Left / Low (Decreasing)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <!-- Disk Size -->
+                <div class="form-group flex-1">
+                  <label for="disk-size">
+                    <i class="fa-solid fa-database"></i> Disk Size (Cylinders)
+                    <span class="tooltip-icon" title="Total cylinders on disk (Cylinders indexed from 0 to Size-1)"><i class="fa-solid fa-circle-info"></i></span>
+                  </label>
+                  <input type="number" id="disk-size" class="form-input" value="200" min="10" max="5000" required>
+                  <span class="input-hint">Default: 200 (Tracks 0 to 199)</span>
+                </div>
+
+                <!-- Initial Head Position -->
+                <div class="form-group flex-1">
+                  <label for="disk-head">
+                    <i class="fa-solid fa-location-crosshairs"></i> Initial Head Position
+                    <span class="tooltip-icon" title="Starting track of the read/write head"><i class="fa-solid fa-circle-info"></i></span>
+                  </label>
+                  <input type="number" id="disk-head" class="form-input" value="50" min="0" max="199" required>
+                  <span class="input-hint" id="disk-head-range-hint">Valid range: 0 to 199</span>
+                </div>
+              </div>
+
+              <!-- Request Queue Input -->
+              <div class="form-group">
+                <div class="label-with-action">
+                  <label for="disk-requests">
+                    <i class="fa-solid fa-list-ol"></i> Cylinder Request Queue
+                    <span class="tooltip-icon" title="Comma-separated or space-separated list of cylinder requests"><i class="fa-solid fa-circle-info"></i></span>
+                  </label>
+                  <button type="button" id="disk-random-queue-btn" class="btn-text">
+                    <i class="fa-solid fa-dice"></i> Generate Random
+                  </button>
+                </div>
+                <input type="text" id="disk-requests" class="form-input" value="82, 170, 43, 140, 24, 16, 190" placeholder="e.g. 82, 170, 43, 140, 24, 16, 190" required>
+                <span class="input-hint">Cylinders separated by commas or spaces (must be within 0 to Disk Size - 1)</span>
+              </div>
+
+              <!-- Action Controls -->
+              <div class="form-actions">
+                <button type="button" id="disk-simulate-btn" class="btn btn-primary">
+                  <i class="fa-solid fa-play"></i> Simulate Algorithm
+                </button>
+                <button type="button" id="disk-compare-all-btn" class="btn btn-secondary">
+                  <i class="fa-solid fa-chart-pie"></i> Compare All 5
+                </button>
+                <button type="button" id="disk-reset-btn" class="btn btn-ghost" title="Reset Inputs">
+                  <i class="fa-solid fa-arrow-rotate-left"></i> Reset
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Metrics & Summary Card -->
+        <div class="card metrics-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-calculator"></i> Performance Telemetry</h3>
+            <span id="disk-algo-tag" class="badge badge-emerald">SCAN</span>
+          </div>
+          <div class="card-body">
+            <div class="metrics-grid">
+              <div class="metric-box highlight-metric">
+                <div class="metric-icon"><i class="fa-solid fa-arrows-split-up-and-left"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Total Head Movement</span>
+                  <span id="disk-total-movement" class="metric-value font-mono">0</span>
+                  <span class="metric-unit">cylinders</span>
+                </div>
+              </div>
+
+              <div class="metric-box">
+                <div class="metric-icon"><i class="fa-solid fa-route"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Average Seek Length</span>
+                  <span id="disk-avg-seek" class="metric-value font-mono">0.00</span>
+                  <span class="metric-unit">cyl / request</span>
+                </div>
+              </div>
+
+              <div class="metric-box">
+                <div class="metric-icon"><i class="fa-solid fa-check-double"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Total Serviced</span>
+                  <span id="disk-serviced-count" class="metric-value font-mono">0</span>
+                  <span class="metric-unit">requests</span>
+                </div>
+              </div>
+
+              <div class="metric-box">
+                <div class="metric-icon"><i class="fa-solid fa-compass"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Initial Direction</span>
+                  <span id="disk-direction-metric" class="metric-value">Right →</span>
+                  <span class="metric-unit">High cylinders</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Service Sequence Badges -->
+            <div class="sequence-section">
+              <div class="sequence-header">
+                <h4><i class="fa-solid fa-arrow-right-arrow-left"></i> Service Sequence:</h4>
+                <span id="disk-step-badge" class="badge badge-subtle">Step 0 / 0</span>
+              </div>
+              <div id="disk-sequence-list" class="sequence-pills-container">
+                <span class="empty-state-text">Run simulation to view service sequence</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Playback & Physical Track Visualizer -->
+      <div class="card visualizer-card">
+        <div class="card-header">
+          <div class="title-with-pill">
+            <h3><i class="fa-solid fa-gamepad"></i> Interactive Step Controller</h3>
+            <span class="pill pill-live"><i class="fa-solid fa-circle"></i> Playback Controller</span>
+          </div>
+
+          <!-- Playback Controls -->
+          <div class="playback-controls">
+            <button id="disk-step-prev" class="btn btn-icon btn-sm" title="Previous Step (Ctrl + Left)">
+              <i class="fa-solid fa-backward-step"></i>
+            </button>
+            <button id="disk-auto-play" class="btn btn-primary btn-sm" title="Auto Play / Pause (Space)">
+              <i class="fa-solid fa-play"></i> <span>Auto Play</span>
+            </button>
+            <button id="disk-step-next" class="btn btn-icon btn-sm" title="Next Step (Ctrl + Right)">
+              <i class="fa-solid fa-forward-step"></i>
+            </button>
+            <button id="disk-playback-reset" class="btn btn-icon btn-sm btn-ghost" title="Reset Animation to Step 0">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+            
+            <div class="playback-speed">
+              <label for="disk-speed-select">Speed:</label>
+              <select id="disk-speed-select" class="form-select form-select-xs">
+                <option value="1600">0.5x</option>
+                <option value="800" selected>1.0x</option>
+                <option value="400">2.0x</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <!-- Physical Cylinder Track Visualization Bar -->
+          <div class="disk-track-container">
+            <div class="disk-track-labels">
+              <span class="track-boundary font-mono">0</span>
+              <span class="track-status">
+                Current Head: <strong id="current-head-display" class="font-mono text-cyan">50</strong>
+                <span id="current-seek-delta" class="seek-delta">(Seek: 0)</span>
+              </span>
+              <span id="track-max-boundary" class="track-boundary font-mono">199</span>
+            </div>
+            
+            <div class="physical-track-wrapper">
+              <div id="disk-physical-track" class="physical-track">
+                <!-- Track Ticks & Grid Background -->
+                <div class="track-scale-marks"></div>
+                <!-- Dynamic Request Pins rendered here -->
+                <div id="track-request-pins" class="track-pins-layer"></div>
+                <!-- Moving Arm / Head Indicator -->
+                <div id="disk-head-arm" class="head-arm" style="left: 25%;">
+                  <div class="head-marker">
+                    <i class="fa-solid fa-caret-down"></i>
+                  </div>
+                  <div class="head-label font-mono">50</div>
+                  <div class="head-line"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart.js Seek Trajectory Graph -->
+          <div class="chart-wrapper">
+            <div class="chart-header">
+              <h4><i class="fa-solid fa-chart-line"></i> Head Seek Trajectory Graph (Cylinder vs Step)</h4>
+              <div class="chart-legend-custom">
+                <span class="legend-item"><span class="legend-dot dot-head"></span> Head Trajectory</span>
+                <span class="legend-item"><span class="legend-dot dot-current"></span> Active Step</span>
+              </div>
+            </div>
+            <div class="canvas-container">
+              <canvas id="diskSeekChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disk Comparison Section (All 5 Algorithms) -->
+      <div id="disk-comparison-section" class="card comparison-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-scale-balanced"></i> Disk Scheduling Benchmark: All 5 Algorithms</h3>
+          <span id="disk-winner-badge" class="badge badge-emerald">🏆 Winner: Calculated</span>
+        </div>
+        <div class="card-body">
+          <div class="comparison-grid">
+            <!-- Table View -->
+            <div class="table-responsive flex-1">
+              <table id="disk-comparison-table" class="data-table">
+                <thead>
+                  <tr>
+                    <th>Algorithm</th>
+                    <th>Total Head Movement</th>
+                    <th>Avg Seek Length</th>
+                    <th>Boundary Hits</th>
+                    <th>Order Sequence</th>
+                  </tr>
+                </thead>
+                <tbody id="disk-comparison-tbody">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Bar Chart Comparison -->
+            <div class="chart-responsive flex-1">
+              <div class="canvas-container-sm">
+                <canvas id="diskComparisonChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 2. CPU SCHEDULING MODULE                   -->
+    <!-- ========================================== -->
+    <section id="cpu-tab" class="tab-content" role="tabpanel">
+      <!-- Section Header -->
+      <div class="section-title-bar">
+        <div>
+          <h2>CPU Scheduling Simulation</h2>
+          <p>Model process execution with FCFS, Non-Preemptive SJF, and Round Robin scheduling.</p>
+        </div>
+        <div class="algorithm-badges">
+          <span class="badge badge-cyan">FCFS</span>
+          <span class="badge badge-purple">SJF (Non-Preemptive)</span>
+          <span class="badge badge-amber">Round Robin</span>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <!-- Process Table & Input Config Card -->
+        <div class="card config-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-server"></i> Process Queue Configuration</h3>
+            <div class="preset-dropdown-container">
+              <select id="cpu-preset-select" class="form-select form-select-sm" title="Load CPU Preset">
+                <option value="">📂 Load Process Preset...</option>
+                <option value="standard-academic">Standard Academic (P1-P4 Staggered)</option>
+                <option value="all-zero-arrival">Simultaneous Arrival (All AT = 0)</option>
+                <option value="idle-gaps">CPU Idle Gap Scenario</option>
+                <option value="round-robin-heavy">RR Quantum Benchmark</option>
+                <option value="random-processes">🎲 Random 5 Processes</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Algorithm & Quantum selection row -->
+            <div class="form-row">
+              <div class="form-group flex-2">
+                <label for="cpu-algorithm"><i class="fa-solid fa-microchip"></i> Scheduling Algorithm</label>
+                <select id="cpu-algorithm" class="form-select">
+                  <option value="FCFS">FCFS (First-Come First-Served)</option>
+                  <option value="SJF" selected>SJF (Shortest Job First - Non-Preemptive)</option>
+                  <option value="RR">Round Robin (RR)</option>
+                </select>
+              </div>
+
+              <div id="quantum-form-group" class="form-group flex-1">
+                <label for="cpu-quantum">
+                  <i class="fa-solid fa-stopwatch"></i> Time Quantum (Q)
+                  <span class="tooltip-icon" title="Time slice allotted per cycle for Round Robin"><i class="fa-solid fa-circle-info"></i></span>
+                </label>
+                <input type="number" id="cpu-quantum" class="form-input font-mono" value="2" min="1" max="50">
+              </div>
+            </div>
+
+            <!-- Process Input Table -->
+            <div class="process-table-container">
+              <div class="table-actions-bar">
+                <span class="table-title"><i class="fa-solid fa-layer-group"></i> Active Process Set</span>
+                <div class="btn-group">
+                  <button type="button" id="cpu-add-row-btn" class="btn btn-sm btn-outline">
+                    <i class="fa-solid fa-plus"></i> Add Process
+                  </button>
+                  <button type="button" id="cpu-clear-table-btn" class="btn btn-sm btn-ghost">
+                    <i class="fa-solid fa-trash-can"></i> Clear
+                  </button>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table id="process-input-table" class="data-table input-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 22%;">Process ID</th>
+                      <th style="width: 26%;">Arrival Time (AT)</th>
+                      <th style="width: 26%;">Burst Time (BT)</th>
+                      <th style="width: 18%;">Priority</th>
+                      <th style="width: 8%;"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="process-table-body">
+                    <!-- Populated dynamically / with defaults -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- CPU Action Controls -->
+            <div class="form-actions mt-3">
+              <button type="button" id="cpu-simulate-btn" class="btn btn-primary">
+                <i class="fa-solid fa-play"></i> Run CPU Simulation
+              </button>
+              <button type="button" id="cpu-compare-all-btn" class="btn btn-secondary">
+                <i class="fa-solid fa-chart-column"></i> Compare All 3
+              </button>
+              <button type="button" id="cpu-reset-btn" class="btn btn-ghost" title="Reset Defaults">
+                <i class="fa-solid fa-arrow-rotate-left"></i> Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CPU Telemetry Metrics Card -->
+        <div class="card metrics-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-square-poll-vertical"></i> CPU Performance Metrics</h3>
+            <span id="cpu-algo-tag" class="badge badge-purple">SJF</span>
+          </div>
+
+          <div class="card-body">
+            <div class="metrics-grid">
+              <div class="metric-box highlight-metric">
+                <div class="metric-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Average Waiting Time</span>
+                  <span id="cpu-avg-wt" class="metric-value font-mono">0.00</span>
+                  <span class="metric-unit">time units (ms)</span>
+                </div>
+              </div>
+
+              <div class="metric-box highlight-metric-cyan">
+                <div class="metric-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Avg Turnaround Time</span>
+                  <span id="cpu-avg-tat" class="metric-value font-mono">0.00</span>
+                  <span class="metric-unit">time units (ms)</span>
+                </div>
+              </div>
+
+              <div class="metric-box">
+                <div class="metric-icon"><i class="fa-solid fa-gauge-high"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">CPU Utilization</span>
+                  <span id="cpu-utilization" class="metric-value font-mono">100%</span>
+                  <span class="metric-unit">active work ratio</span>
+                </div>
+              </div>
+
+              <div class="metric-box">
+                <div class="metric-icon"><i class="fa-solid fa-flag-checkered"></i></div>
+                <div class="metric-data">
+                  <span class="metric-label">Total Completion Time</span>
+                  <span id="cpu-makespan" class="metric-value font-mono">0</span>
+                  <span class="metric-unit">makespan units</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ready Queue Live State -->
+            <div class="sequence-section">
+              <div class="sequence-header">
+                <h4><i class="fa-solid fa-cubes-stacked"></i> Ready Queue State:</h4>
+                <span id="cpu-queue-time-badge" class="badge badge-subtle">Time T = 0</span>
+              </div>
+              <div id="cpu-ready-queue-display" class="sequence-pills-container">
+                <span class="empty-state-text">Ready Queue empty or simulation not initiated</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gantt Chart & Step Playback Card -->
+      <div class="card visualizer-card">
+        <div class="card-header">
+          <div class="title-with-pill">
+            <h3><i class="fa-solid fa-timeline"></i> Interactive Gantt Chart Timeline</h3>
+            <span class="pill pill-live"><i class="fa-solid fa-circle"></i> Timeline Visualizer</span>
+          </div>
+
+          <!-- Gantt Playback Controls -->
+          <div class="playback-controls">
+            <button id="cpu-step-prev" class="btn btn-icon btn-sm" title="Previous Gantt Slice">
+              <i class="fa-solid fa-backward-step"></i>
+            </button>
+            <button id="cpu-auto-play" class="btn btn-primary btn-sm" title="Play / Pause Gantt">
+              <i class="fa-solid fa-play"></i> <span>Auto Play</span>
+            </button>
+            <button id="cpu-step-next" class="btn btn-icon btn-sm" title="Next Gantt Slice">
+              <i class="fa-solid fa-forward-step"></i>
+            </button>
+            <button id="cpu-playback-reset" class="btn btn-icon btn-sm btn-ghost" title="Reset Gantt View">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+            
+            <div class="playback-speed">
+              <label for="cpu-speed-select">Speed:</label>
+              <select id="cpu-speed-select" class="form-select form-select-xs">
+                <option value="1600">0.5x</option>
+                <option value="800" selected>1.0x</option>
+                <option value="400">2.0x</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <!-- Animated Gantt Chart Visual Container -->
+          <div class="gantt-chart-wrapper">
+            <div id="gantt-chart-container" class="gantt-bars-track">
+              <!-- Dynamically generated Gantt process blocks and time stamps -->
+              <div class="gantt-placeholder">Run simulation to render the Gantt chart blocks</div>
+            </div>
+            <!-- Time tick labels bar -->
+            <div id="gantt-time-scale" class="gantt-time-scale"></div>
+          </div>
+
+          <!-- Detailed Process Execution Table -->
+          <div class="table-section mt-4">
+            <div class="section-subheading">
+              <h4><i class="fa-solid fa-table-list"></i> Process Execution Calculation Matrix</h4>
+              <span class="subtext">Turnaround Time (TAT) = CT - AT | Waiting Time (WT) = TAT - BT</span>
+            </div>
+
+            <div class="table-responsive">
+              <table id="cpu-results-table" class="data-table text-center">
+                <thead>
+                  <tr>
+                    <th>Process ID</th>
+                    <th>Arrival Time (AT)</th>
+                    <th>Burst Time (BT)</th>
+                    <th>Priority</th>
+                    <th>Completion Time (CT)</th>
+                    <th>Turnaround Time (TAT)</th>
+                    <th>Waiting Time (WT)</th>
+                    <th>Response Time (RT)</th>
+                  </tr>
+                </thead>
+                <tbody id="cpu-results-tbody">
+                  <!-- Populated dynamically -->
+                </tbody>
+                <tfoot id="cpu-results-tfoot">
+                  <!-- Averages row -->
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CPU Comparison Section (All 3 Algorithms) -->
+      <div id="cpu-comparison-section" class="card comparison-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-chart-simple"></i> CPU Scheduling Benchmark: FCFS vs SJF vs Round Robin</h3>
+          <span id="cpu-winner-badge" class="badge badge-emerald">🏆 Winner: Calculated</span>
+        </div>
+        <div class="card-body">
+          <div class="comparison-grid">
+            <!-- Table View -->
+            <div class="table-responsive flex-1">
+              <table id="cpu-comparison-table" class="data-table">
+                <thead>
+                  <tr>
+                    <th>Algorithm</th>
+                    <th>Avg Waiting Time (WT)</th>
+                    <th>Avg Turnaround (TAT)</th>
+                    <th>Makespan</th>
+                    <th>CPU Efficiency</th>
+                  </tr>
+                </thead>
+                <tbody id="cpu-comparison-tbody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Grouped Bar Chart Comparison -->
+            <div class="chart-responsive flex-1">
+              <div class="canvas-container-sm">
+                <canvas id="cpuComparisonChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 3. BENCHMARKING & COMPARISON OVERVIEW      -->
+    <!-- ========================================== -->
+    <section id="compare-tab" class="tab-content" role="tabpanel">
+      <div class="section-title-bar">
+        <div>
+          <h2>Comprehensive System Benchmarking</h2>
+          <p>Side-by-side performance evaluation and efficiency scoring across all scheduling models.</p>
+        </div>
+        <button id="run-all-benchmarks-btn" class="btn btn-primary">
+          <i class="fa-solid fa-bolt"></i> Run Unified Benchmark
+        </button>
+      </div>
+
+      <div class="benchmark-grid">
+        <!-- Disk Benchmark Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-compact-disc text-cyan"></i> Disk Seek Length Overview</h3>
+            <span class="badge badge-cyan">5 Algorithms</span>
+          </div>
+          <div class="card-body">
+            <p class="card-lead">Comparing total cylinder distance traversed across the active request queue:</p>
+            <div class="canvas-container">
+              <canvas id="benchmarkDiskChart"></canvas>
+            </div>
+            <div id="benchmark-disk-summary" class="summary-box mt-3"></div>
+          </div>
+        </div>
+
+        <!-- CPU Benchmark Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-bolt-lightning text-amber"></i> CPU Waiting & Turnaround Overview</h3>
+            <span class="badge badge-amber">3 Algorithms</span>
+          </div>
+          <div class="card-body">
+            <p class="card-lead">Evaluating queue latency and process turnaround time under identical workloads:</p>
+            <div class="canvas-container">
+              <canvas id="benchmarkCpuChart"></canvas>
+            </div>
+            <div id="benchmark-cpu-summary" class="summary-box mt-3"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 4. ACADEMIC VIVA & STUDY GUIDE             -->
+    <!-- ========================================== -->
+    <section id="docs-tab" class="tab-content" role="tabpanel">
+      <div class="section-title-bar">
+        <div>
+          <h2>MCA Academic Guide & Viva Cheatsheet</h2>
+          <p>Key theoretical concepts, mathematical formulas, time complexities, and examiner questions.</p>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="window.print()">
+          <i class="fa-solid fa-print"></i> Print Notes
+        </button>
+      </div>
+
+      <div class="viva-grid">
+        <!-- Formulas Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-square-root-variable text-cyan"></i> Core Mathematical Formulas</h3>
+          </div>
+          <div class="card-body docs-body">
+            <div class="formula-block">
+              <h5>CPU Scheduling Metrics</h5>
+              <ul>
+                <li><code>Turnaround Time (TAT) = Completion Time (CT) - Arrival Time (AT)</code></li>
+                <li><code>Waiting Time (WT) = Turnaround Time (TAT) - Burst Time (BT)</code></li>
+                <li><code>Response Time (RT) = First CPU Allocation Time - Arrival Time (AT)</code></li>
+                <li><code>Average WT = (∑ WT) / Number of Processes</code></li>
+                <li><code>Average TAT = (∑ TAT) / Number of Processes</code></li>
+                <li><code>Throughput = Total Completed Processes / Total Time Span</code></li>
+              </ul>
+            </div>
+
+            <div class="formula-block mt-3">
+              <h5>Disk Scheduling Metrics</h5>
+              <ul>
+                <li><code>Seek Distance between tracks A and B = | A - B |</code></li>
+                <li><code>Total Head Movement = ∑ | Cylinder_{i} - Cylinder_{i-1} |</code></li>
+                <li><code>Average Seek Distance = Total Head Movement / Total Serviced Requests</code></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Algorithms Comparative Matrix -->
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-table-columns text-purple"></i> Algorithms Quick Reference</h3>
+          </div>
+          <div class="card-body docs-body">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Algorithm</th>
+                    <th>Type</th>
+                    <th>Starvation Risk?</th>
+                    <th>Time Complexity</th>
+                    <th>Key Characteristics</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>FCFS (Disk)</strong></td>
+                    <td>Fair</td>
+                    <td>No</td>
+                    <td><code>O(N)</code></td>
+                    <td>Simple, zero overhead, high seek latency.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>SSTF</strong></td>
+                    <td>Greedy</td>
+                    <td>Yes (distant tracks)</td>
+                    <td><code>O(N²)</code></td>
+                    <td>Minimizes immediate seek; may cause starvation.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>SCAN</strong></td>
+                    <td>Elevator</td>
+                    <td>No</td>
+                    <td><code>O(N log N)</code></td>
+                    <td>Sweeps to disk boundary, then reverses.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>C-SCAN</strong></td>
+                    <td>Circular</td>
+                    <td>No</td>
+                    <td><code>O(N log N)</code></td>
+                    <td>Sweeps in one direction only; uniform wait times.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>LOOK</strong></td>
+                    <td>Optimized</td>
+                    <td>No</td>
+                    <td><code>O(N log N)</code></td>
+                    <td>Reverses at highest/lowest request; avoids boundary waste.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>SJF (CPU)</strong></td>
+                    <td>Greedy</td>
+                    <td>Yes (long jobs)</td>
+                    <td><code>O(N²)</code></td>
+                    <td>Optimal minimum average waiting time.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Round Robin</strong></td>
+                    <td>Preemptive</td>
+                    <td>No</td>
+                    <td><code>O(N)</code> per slice</td>
+                    <td>Time-shared fair queue; heavily dependent on quantum Q.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Viva Questions & Answers -->
+        <div class="card full-width">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-graduation-cap text-emerald"></i> Common MCA Viva Voce Questions & Model Answers</h3>
+          </div>
+          <div class="card-body docs-body">
+            <div class="faq-item">
+              <div class="faq-question">Q1: Why is SSTF prone to starvation?</div>
+              <div class="faq-answer">
+                In SSTF (Shortest Seek Time First), the head prioritizes whichever pending cylinder request is closest to its current position. If new requests continuously arrive near the current head position, requests far away on the outer or inner tracks will be postponed indefinitely, leading to starvation.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-question">Q2: How does LOOK improve upon the classic SCAN algorithm?</div>
+              <div class="faq-answer">
+                Classic SCAN (Elevator algorithm) always continues traveling until it strikes the physical end of the disk (track 0 or disk_size - 1) before reversing direction, even if no pending requests exist beyond the current head. LOOK checks ahead and reverses immediately at the furthest requested cylinder, avoiding useless seek travel to the physical boundary.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-question">Q3: How does the choice of Time Quantum (Q) impact Round Robin scheduling?</div>
+              <div class="faq-answer">
+                If the Time Quantum is extremely large, Round Robin degenerates into FCFS (First-Come First-Served). If the Time Quantum is extremely small, CPU context-switching overhead becomes dominant, crippling throughput. The optimal rule of thumb is setting Q such that roughly 80% of CPU bursts are shorter than Q.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-question">Q4: Why does SJF provide the minimum average waiting time?</div>
+              <div class="faq-answer">
+                By executing the shortest job first, short processes finish rapidly and leave the system, significantly reducing the cumulative waiting time experienced by all subsequent processes. This property is mathematically proven using the rearrangement inequality.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- App Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div class="footer-meta">
+        <span><i class="fa-solid fa-graduation-cap"></i> MCA Operating Systems Lab Assignment</span>
+        <span class="divider">•</span>
+        <span>HTML5 / CSS3 / Vanilla JavaScript</span>
+        <span class="divider">•</span>
+        <span>Visualized via Chart.js</span>
+      </div>
+      <div class="footer-copy">
+        OS Scheduling Visualizer &copy; 2026. Designed for rigorous academic simulation.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Custom JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>
